@@ -12,27 +12,32 @@ These papers are likely to be stored in an Excel file as URLs, where the papers 
 
 To prevent time-consuming analsysis, an algorithm can be used to check each of the websites and scan the abstracts for keywords.
 
-# Required steps
+# Functionality achieved so far:
 
-MVP
+- Extract URLs from an Excel file into Python (completed)
+- Configure a web scraping programme that can go to a list of URLs and scrape the text from the abstract of an article (completed)
+- Return whether the articles contain various keywords (completed)
+- Export the analysis to a new Excel file (completed)
+- Add the abstract, abstract length, and any abstract length concerns that suggest human validation is worthwhile (completed)
+- Automatically colour code the new Excel file (completed)
 
-- Extract URLs from an Excel file into Python.
-- Configure a web scraping programme that can go to the URL and scrape the text from the abstract of an article.
-- Return whether the articles contain that keyword.
+For the future:
 
-EXTENSION
-
-- Return a dataset that shows the presence or absence of keywords for many articles.
-- Export the analysis to a new Excel file.
 - Identify schema for accessing abstracts on different domains (e.g. Scopus vs ResearchGate)
 - Extract domain name automatically from a URL
 
-# Why Python?
+# Technologies used
 
-Python is ideal for this kind of data extraction task where we are also happy working in a Command Line Interface.
+- Python is ideal for this kind of data extraction task where we are also happy working in a Command Line Interface.
+- BeautifulSoup is useful for parsing HTML documents.
+- OpenPandas is useful for importing and exporting XLSX spreadsheets.
+- OpenPYXL is useful for conditional formatting in XLSX spreadsheets.
+- ExcelViewer (extension) allows checking XLSX files within VSCode.
 
 # Dev environment
 
-With Python installed, use the Command Line to run the script file
+With Python and the packages installed installed, use the Command Line to run the script file
 
 - Enter "python script.py" in the terminal.
+
+Note, you can use a VSCode extension to view xls files.
