@@ -18,7 +18,7 @@ keyword_results = {keyword: [] for keyword in keywords}  # Initialize a dictiona
 make_requests = True
 
 # Importing spreadsheet data
-df = pd.read_excel('papers.xlsx', sheet_name='urls')  # You can specify the sheet name or index
+df = pd.read_excel('input.xlsx', sheet_name='urls')  # You can specify the sheet name or index
 urls = []
 abstract_data = {
     "abstract_text": [],
