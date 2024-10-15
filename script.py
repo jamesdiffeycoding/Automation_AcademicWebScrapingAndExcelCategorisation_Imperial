@@ -16,10 +16,14 @@ timeout_seconds = 10
 keywords = ["climate", "environment", "sustainability", "anxiety", "sensitivity", "mitigation"]
 min_abstract_char_length = 450
 max_abstract_char_length = 2500
+output_file_name = 'output.xlsx'
+input_file_name = 'papers.xlsx'
+green_font = Font(color="55C233")
+red_font = Font(color="FF0000")
 
 
 # IMPORT SPREADSHEET DATA ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-df = pd.read_excel('papers.xlsx', sheet_name='urls')  # You can specify the sheet name or index
+df = pd.read_excel(input_file_name, sheet_name='urls')  # You can specify the sheet name or index
 # ... DEFINE URLS ////////////////////////////////////
 urls = []
 if 'URLS' in df.columns:
@@ -97,7 +101,6 @@ for index, url in enumerate(urls):
                 abstract_data[abstract].append("ERROR - ABSTRACT NOT FOUND")
 
 
-        print("\n")
         # END OF DATA HANDLING FOR ARTICLES ON ---- NIH ----- WEBSITE /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -113,39 +116,40 @@ for index, url in enumerate(urls):
 
 
 
-# Exporting analysis
+# Exporting analysis ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 try: 
-    # Update DataFrame with abstract data
+    # Update DataFrame //////////////////////////////////////////////////////////
     for abstract in abstract_data:
         df[abstract] = abstract_data[abstract]
-
-    # Update DataFrame with keyword results
     for keyword in keywords:
         df[keyword] = keyword_results[keyword]
 
-    # Export to Excel
-    output_file_name = 'output.xlsx'
+    # Export to Excel ////////////////////////////////////////////////////////////
     df.to_excel(output_file_name, index=False, sheet_name='urls')  # index=False to omit row indices
+    print("Export to Excel successful.")
 
-    # Open the workbook and apply formatting
+except Exception as e:
+    print("Error exporting analysis - do you have the file open?\n", e)
+
+
+
+
+
+# Apply formatting ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+try:
     workbook = load_workbook(output_file_name)
     sheet = workbook.active
 
-    # Define styles
-    green_font = Font(color="55C233")
-    red_font = Font(color="FF0000")
-
-    # Apply styles based on the values
+    # Apply styles based on the values ////////////////////////////////////////////////////////
     for row in range(2, len(df) + 2):  # Start from the second row to skip the header
-        # Check abstract concerns
+        # Check abstract concerns ////////////////////////////////////////////////////////
         abstract_concern_cell = sheet[f"D{row}"]  # Assuming abstract concerns are in column D
         if "OK" in str(abstract_concern_cell.value):
             abstract_concern_cell.font = green_font
         elif str(abstract_concern_cell.value.startswith("Short")) or abstract_concern_cell.value.startswith("Long"):
             abstract_concern_cell.font = red_font
-    
 
-        # Check keywords
+        # Check keywords ////////////////////////////////////////////////////////
         for col in range(4, len(keywords) + 4):  # Assuming keywords start from column D
             keyword_cell = sheet.cell(row=row, column=col)
             if keyword_cell.value == "present":
@@ -153,16 +157,26 @@ try:
             elif keyword_cell.value == "missing":
                 keyword_cell.font = red_font
 
-    # Save the workbook
+    # Save the workbook ////////////////////////////////////////////////////////
     workbook.save(output_file_name)
-    print("Output file generated successfully.")
+    print("Colour code successful.\n")
+
 except Exception as e:
-    print("Error exporting analysis - do you have the file open?\n", e)
+    print("Error colour coding the analysis\n", e)
 
 
 
 
-# EXAMPLE CODE
+
+
+
+
+
+
+
+
+
+# EXAMPLE CODE FOR BEAUTIFUL SOUP
     # Example code: how to print all div elements, classes and ids
         # all_divs = soup.findAll("div")
         # for div in all_divs:
