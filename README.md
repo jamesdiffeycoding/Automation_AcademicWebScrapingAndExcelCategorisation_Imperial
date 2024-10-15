@@ -30,3 +30,9 @@ EXTENSION
 # Why Python?
 
 Python is ideal for this kind of data extraction task where we are also happy working in a Command Line Interface.
+
+# Dev environment
+
+With Python installed, use the Command Line to run the script file
+
+- Enter "python script.py" in the terminal.
