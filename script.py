@@ -1,65 +1,99 @@
+# USER GUIDE 📄 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+# Read the README.md file for more context on this project.
+# To run this file, install dependencies and run "python script.py" in your command line.
+# The main part of this code you can change to try this yourself are those in the "⬇️ CONFIGURATION - change me! ⬇️" section.
+# The DOM structure updates daily, so you may also need to check the current DOM structure being used and update the "todays_parent_element_type and todays_parent_element_class" variables
+# To edit the URLs navigate to the papers.xlsx file.
+
+
 # IMPORTS ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.styles import PatternFill, Font
+import requests # HTTP requests
+from bs4 import BeautifulSoup # Parsing HTML
+import pandas as pd # Import and export Excel files
+from openpyxl import load_workbook # Load Excel files for conditional colour formatting
+from openpyxl.styles import PatternFill, Font # Pre-defined styles for conditional colour formatting
 
 
-print("////////////////////////////////////////////////////// Running script.py //////////////////////////////////////////////////////")
 
-# CONFIGURATION - change me! ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+# ⬇️ CONFIGURATION - change me! ⬇️ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+# keywords
+keywords = ["climate", "environment", "sustainability", "anxiety", "sensitivity", "mitigation"]
+keyword_results = {keyword: [] for keyword in keywords}  # Initialize a dictionary for keyword results
+
+# request information
+timeout_seconds = 10 # timeout for the HTTP requests
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
 }
-timeout_seconds = 10
-keywords = ["climate", "environment", "sustainability", "anxiety", "sensitivity", "mitigation"]
+
+# abstract character lengths which trigger warning flags
 min_abstract_char_length = 450
 max_abstract_char_length = 2500
+
+# file names/paths
 output_file_name = 'output.xlsx'
 input_file_name = 'papers.xlsx'
+
+# colours
 green_font = Font(color="55C233")
 red_font = Font(color="FF0000")
 
+# ⬇️ change the DOM element structure below⬇️
+# todays_parent_element_type = "div" 
+todays_parent_element_type = "section"
+# todays_parent_element_class = "tsec"
+todays_parent_element_class = "abstract"
+
+
+
+
+# SCRIPT RUNNING MESSAGE ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+print("Running script.py\n")
+
 
 # IMPORT SPREADSHEET DATA ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-df = pd.read_excel(input_file_name, sheet_name='urls')  # You can specify the sheet name or index
-# ... DEFINE URLS ////////////////////////////////////
+data_frame = pd.read_excel(input_file_name, sheet_name='urls')  # You can specify the sheet name or index
+
 urls = []
-if 'URLS' in df.columns:
-    for url in df['URLS']:
+if 'URLS' in data_frame.columns:
+    for url in data_frame['URLS']:
         urls.append(url)
 else:
     print("The 'URLS' column does not exist in the DataFrame.")
+
+
+
 # ... KEYWORD AND ABSTRACT PLACEHOLDERS ///////////////
 abstract_data = {
     "abstract_text": [],
     "abstract_length": [],
     "abstract_concerns": []
 }
-keyword_results = {keyword: [] for keyword in keywords}  # Initialize a dictionary for keyword results
 
 
 # LOOPING THROUGH EACH URL REQUEST ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 for index, url in enumerate(urls):
     try:
         # GENERIC REQUEST AND PASSING///////////////////////////////////////
-        print(f"\n_________________________ NEW URL ({index}) - {url} ______________________________________________\n")
+        print(f"\n_________________________ FETCHING URL ({index}) - {url} ______________________________________________\n")
         page_to_scrape = requests.get(url, headers=HEADERS, timeout=timeout_seconds)
         page_to_scrape.raise_for_status()  # Raises an HTTPError for bad responses (4xx, 5xx)
         soup = BeautifulSoup(page_to_scrape.content, 'html.parser')
 
 
+  
         # DATA HANDLING FOR ARTICLES ON ---- NIH ----- WEBSITE /////////////////////////////////////////////////////////////////////////////////////////////////////
-        # NIH STRATEGY: find div that has class "tsec" and a child h2 element with text "Abstract"
-        all_divs = soup.findAll("div")
+        # NIH STRATEGY 1: find div that has class "tsec" and a child h2 element with text "Abstract"
+        # NIH STRATEGY 2: on some days, the structure changes to use sections with class "abstract" and the same h2 element
+
+        all_divs = soup.findAll(todays_parent_element_type)
         abstract_found = False # flag
         # step: loop through all divs
         for div in all_divs:
-            # step: check if div has class "tsec"
+            # step: check if todays_parent_element_type has class todays_parent_element_class
             if ('class' in div.attrs):
                 div_classes = div.attrs['class']
-                if 'tsec' in div_classes:
+                if todays_parent_element_class in div_classes:
                     # step: get all direct h2 children
                     all_h2s = div.findAll("h2", recursive=False) # recursive = False allows finding direct parents only, preventing duplicate prints
                     # step: Find the first h2 with 'Abstract' or 'Summary'
@@ -68,8 +102,7 @@ for index, url in enumerate(urls):
                     if first_h2:
                         abstract_found = True
                         div_text = div.getText().replace("Abstract", "").replace("Summary", "").strip().lower()
-
-                        # update abstract info
+                        # record abstract scrape and length analysis information in variables
                         abstract_data["abstract_text"].append(div_text)
                         abstract_data["abstract_length"].append(len(div_text))
 
@@ -80,7 +113,7 @@ for index, url in enumerate(urls):
                         else:
                             abstract_data["abstract_concerns"].append("Length: OK")
 
-                        # update keyword info
+                        # record keyword check information in variables
                         for keyword in keywords:
                             if keyword in div_text:
                                 print(f"Keyword '{keyword}' found ✅")
@@ -90,21 +123,19 @@ for index, url in enumerate(urls):
                                 keyword_results[keyword].append("missing")
 
                         
-                        break  # Exit the loop after processing the first found abstract
+                        break  # Exit the loop after processing the first instance (to prevent analysing Summaries provided at the end of papers and analysing two text-sources for some papers)
 
 
         if(abstract_found == False):
-            print("!!! Cannot find parent div")
+            print("!!! Cannot find an Abstract, Summary or the parent that contains them.")
+            # record error messages in variables for the output file
             for keyword in keywords:
                 keyword_results[keyword].append("ERROR - ABSTRACT NOT FOUND")
             for abstract in abstract_data:
                 abstract_data[abstract].append("ERROR - ABSTRACT NOT FOUND")
 
 
-        # END OF DATA HANDLING FOR ARTICLES ON ---- NIH ----- WEBSITE /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-    
+        # END OF DATA HANDLING FOR ARTICLES ON NATIONAL LIBRARY OF MEDICINE WEBSITE /////////////////////////////////////////////////////////////////////////////////////////////////////
     except requests.exceptions.HTTPError as http_err:
         print(f"HTTP error occurred: {http_err}")
     except requests.exceptions.ConnectionError as conn_err:
@@ -118,30 +149,35 @@ for index, url in enumerate(urls):
 
 # Exporting analysis ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 try: 
-    # Update DataFrame //////////////////////////////////////////////////////////
+    # Update DataFrame with abstract and keyword data //////////////////////////////////////////////////////////
     for abstract in abstract_data:
-        df[abstract] = abstract_data[abstract]
+        data_frame[abstract] = abstract_data[abstract]
     for keyword in keywords:
-        df[keyword] = keyword_results[keyword]
+        data_frame[keyword] = keyword_results[keyword]
 
     # Export to Excel ////////////////////////////////////////////////////////////
-    df.to_excel(output_file_name, index=False, sheet_name='urls')  # index=False to omit row indices
-    print("Export to Excel successful.")
+    data_frame.to_excel(output_file_name, index=False, sheet_name='urls')  # index=False to omit row indices
+    print("\n")
+
+    print("\n Attempting to export...")
+
+
+    print("SUCCESS! Export to Excel successful.")
 
 except Exception as e:
-    print("Error exporting analysis - do you have the file open?\n", e)
+    print("ERROR! problem exporting analysis - do you have the file open?\n", e)
 
 
 
 
 
-# Apply formatting ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+# Apply conditional formatting ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 try:
     workbook = load_workbook(output_file_name)
     sheet = workbook.active
 
     # Apply styles based on the values ////////////////////////////////////////////////////////
-    for row in range(2, len(df) + 2):  # Start from the second row to skip the header
+    for row in range(2, len(data_frame) + 2):  # Start from the second row to skip the header
         # Check abstract concerns ////////////////////////////////////////////////////////
         abstract_concern_cell = sheet[f"D{row}"]  # Assuming abstract concerns are in column D
         if "OK" in str(abstract_concern_cell.value):
@@ -150,7 +186,7 @@ try:
             abstract_concern_cell.font = red_font
 
         # Check keywords ////////////////////////////////////////////////////////
-        for col in range(4, len(keywords) + 4):  # Assuming keywords start from column D
+        for col in range(4, len(keywords) + 5):  # Assuming keywords start from column D, 4 represents colomn D
             keyword_cell = sheet.cell(row=row, column=col)
             if keyword_cell.value == "present":
                 keyword_cell.font = green_font
@@ -159,46 +195,11 @@ try:
 
     # Save the workbook ////////////////////////////////////////////////////////
     workbook.save(output_file_name)
-    print("Colour code successful.\n")
+    print("\n")
+
+    print("\n Attempting to apply conditional formatting...")
+
+    print("SUCCESS! Colour code successful.\n")
 
 except Exception as e:
-    print("Error colour coding the analysis\n", e)
-
-
-
-
-
-
-
-
-
-
-
-
-
-# EXAMPLE CODE FOR BEAUTIFUL SOUP
-    # Example code: how to print all div elements, classes and ids
-        # all_divs = soup.findAll("div")
-        # for div in all_divs:
-        #     # CHECK CLASSES
-        #     if 'class' in div.attrs:
-        #         class_given = div.attrs['class']
-        #         print("class:", class_given)
-
-        #     # CHECK IDs
-        #     if 'id' in div.attrs:
-        #         id_given = div.attrs['id']
-        #         print("id:", id_given)
-
-    # Example code: how to print all p elements, classes and ids
-        # all_ps = soup.findAll("p")
-        # for p in all_ps:
-        #     # CHECK CLASSES
-        #     if 'class' in p.attrs:
-        #         class_given = p.attrs['class']
-        #         print("class:", class_given)
-
-        #     # CHECK IDs
-        #     if 'id' in p.attrs:
-        #         id_given = p.attrs['id']
-        #         print("id:", id_given)
+    print("ERROR! problem colour coding the analysis\n", e)
