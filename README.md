@@ -13,18 +13,28 @@ I have found other websites, such as **Research Gate**, block my attempts to scr
 Basic functionality: ✔
 
 ✔ Import URLs from an Excel file.
+
 ✔ Successfully scrape one URL for its abstract.
+
 ✔ Adjust algorithm to correctly scrape for all URLs from the same website.
+
 ✔ Scan text for developer-defined keywords.
+
 ✔ Export analysis to a new 'output' Excel file.
+
 
 Extensions: ✔
 
 ✔ Calculate abstract length with a 'abstract_length_concerns' variable to safeguard against errors identifying the paper's abstract.
+
 ✔ Input all data into spreadsheet: abstract information, any concerns, and keyword results.
+
 ✔ Apply colour formatting based on cell values.
+
 ✔ Add clear error handling and logs throughout the application.
+
 ✔ Add code that works for version 2 of their DOM structure (which they change to prevent malicious web scraping).
+
 
 Next steps:
 
